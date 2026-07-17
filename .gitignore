@@ -1,0 +1,4 @@
+.env
+minwon.db
+__pycache__/
+*.pyc
