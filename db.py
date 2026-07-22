@@ -64,6 +64,21 @@ def init_db() -> None:
         ],
     )
 
+    # 사용자 제출 민원 참고 내용 (간접 주입 취약 경로)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_submissions (
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            title   TEXT,
+            content TEXT,
+            created TEXT DEFAULT (datetime('now','localtime'))
+        )
+    """)
+
+    c.execute(
+        "INSERT OR IGNORE INTO user_submissions (id, title, content) VALUES (?,?,?)",
+        (1, "주민등록등본 발급 문의", "온라인 신청 후 처리 기간이 궁금합니다."),
+    )
+
     _api_key = os.environ.get("GOV_ADMIN_API_KEY",    "gov-api-9f3a2c1e7b4d8f0e2a5c")
     _db_pass = os.environ.get("MINWON_DB_PASSWORD",   "Minwon!Gov#2026Admin")
     _gw_url  = os.environ.get("INTERNAL_GATEWAY_URL", "http://internal.mois.go.kr:9443/api/v2")
@@ -81,6 +96,28 @@ def init_db() -> None:
 
     conn.commit()
     conn.close()
+
+
+def add_user_submission(title: str, content: str) -> int:
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("INSERT INTO user_submissions (title, content) VALUES (?, ?)", (title, content))
+    conn.commit()
+    last_id = c.lastrowid
+    conn.close()
+    return last_id
+
+
+def get_user_submissions() -> str:
+    conn = get_connection()
+    c = conn.cursor()
+    rows = c.execute(
+        "SELECT title, content FROM user_submissions ORDER BY id DESC LIMIT 5"
+    ).fetchall()
+    conn.close()
+    if not rows:
+        return "  (접수된 참고 내용 없음)"
+    return "\n".join(f"  [{title}] {content}" for title, content in rows)
 
 
 def get_system_context() -> str:
