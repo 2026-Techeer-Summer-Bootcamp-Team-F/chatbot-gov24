@@ -19,6 +19,9 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from db import add_user_submission, get_system_context, get_user_submissions, init_db
 
